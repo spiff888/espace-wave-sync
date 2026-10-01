@@ -1,0 +1,12 @@
+# Copy to compose.yml (or merge into the kiosk's compose file) and adjust paths.
+services:
+  espace-wave-sync:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CONFIG_PATH: /data/config.json
+      STATE_PATH: /data/state.json
+      NODE_EXTRA_CA_CERTS: /data/wave-ca.pem
+    volumes:
+      - ./data:/data   # holds config.json, wave-ca.pem, state.json

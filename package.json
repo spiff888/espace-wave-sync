@@ -1,0 +1,29 @@
+{
+  "name": "espace-wave-sync",
+  "version": "0.1.0",
+  "description": "Keeps a Wisenet WAVE layout in sync with today's eSPACE events: shows the campus board plus cameras for rooms that are in use.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "once": "tsx src/index.ts --once",
+    "list-devices": "tsx src/tools/list-devices.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepare": "git config core.hooksPath .githooks || true"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

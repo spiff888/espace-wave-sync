@@ -1,0 +1,36 @@
+#!/bin/sh
+# Blocks commits that contain site data or secrets.
+# Enabled by `npm install` (sets core.hooksPath=.githooks).
+set -eu
+
+fail=0
+
+# 1. Files that must never be committed.
+blocked=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '(^|/)(\.env(\..*)?|config\.json|state\.json)$|\.(pem|crt|key)$|(^|/)captures/' | grep -v '\.env\.example$' || true)
+if [ -n "$blocked" ]; then
+  echo "pre-commit: refusing to commit site-specific files:" >&2
+  echo "$blocked" | sed 's/^/  /' >&2
+  fail=1
+fi
+
+# 2. Secrets and private IPs in staged content.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --config .gitleaks.toml --redact --no-banner || fail=1
+else
+  echo "pre-commit: gitleaks not installed (brew install gitleaks); running basic checks only" >&2
+  added=$(git diff --cached -U0 -- . ':(exclude).gitleaks.toml' ':(exclude).githooks/*' ':(exclude).env.example' | grep -E '^\+[^+]' || true)
+  ips=$(printf '%s\n' "$added" | grep -E '(^|[^0-9.])(10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3})([^0-9]|$)' || true)
+  # Only quoted literals, e.g. password: "hunter2hunter" or PASSWORD='abc123xyz'
+  pw=$(printf '%s\n' "$added" | grep -iE 'pass(word)?["'\'']?[ ]*[:=][ ]*["'\''][^"'\'' ]{6,}["'\'']' | grep -viE '["'\''](fake-|example|change-me)' || true)
+  hits=$(printf '%s\n%s' "$ips" "$pw" | sed '/^$/d')
+  if [ -n "$hits" ]; then
+    echo "pre-commit: staged changes contain a private IP or password-like value:" >&2
+    echo "$hits" | cut -c1-120 | sed 's/^/  /' >&2
+    fail=1
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit: commit blocked. Move site data to .env / config.json (both gitignored)." >&2
+  exit 1
+fi

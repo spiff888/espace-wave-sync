@@ -1,0 +1,32 @@
+{
+  "lookaheadMinutes": 15,
+  "graceMinutes": 5,
+  "bookmarks": {
+    "enabled": true,
+    "tags": ["espace"]
+  },
+  "campuses": [
+    {
+      "name": "Example Campus",
+      "layoutName": "Daily View - Example Campus",
+      "boardWebPageId": "00000000-0000-0000-0000-00000000b0a2",
+      "maxCameraTiles": 8,
+      "gridColumns": 3,
+      "defaultCameras": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "rooms": {
+        "Main Auditorium": [
+          "00000000-0000-0000-0000-000000000011",
+          "00000000-0000-0000-0000-000000000012"
+        ],
+        "Fellowship Hall": [
+          "00000000-0000-0000-0000-000000000021"
+        ],
+        "Youth Room": [
+          "00000000-0000-0000-0000-000000000031"
+        ]
+      }
+    }
+  ]
+}

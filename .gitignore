@@ -1,0 +1,18 @@
+# Site-specific data: never commit
+.env
+.env.*
+!.env.example
+config.json
+state.json
+*.pem
+*.crt
+*.key
+
+# Captured API responses from a real server (use fake fixtures in test/ instead)
+captures/
+devices*.json
+
+node_modules/
+dist/
+*.log
+.DS_Store
