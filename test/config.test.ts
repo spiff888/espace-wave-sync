@@ -31,4 +31,9 @@ describe("parseConfig", () => {
     expect(c.lookaheadMinutes).toBe(15);
     expect(c.campuses[0]?.maxCameraTiles).toBe(8);
   });
+
+  it("enables bookmarks by default when the section is omitted", () => {
+    const c = parseConfig({ campuses: [{ name: "X", layoutName: "L", rooms: {} }] });
+    expect(c.bookmarks).toEqual({ enabled: true, tags: ["espace"] });
+  });
 });

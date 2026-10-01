@@ -21,7 +21,8 @@ const ConfigSchema = z.object({
       enabled: z.boolean().default(true),
       tags: z.array(z.string()).default(["espace"]),
     })
-    .default({}),
+    // Zod 4: prefault parses {} through the schema so the inner defaults apply.
+    .prefault({}),
   campuses: z.array(CampusSchema).min(1),
 });
 
