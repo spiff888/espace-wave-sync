@@ -23,7 +23,7 @@ If the kiosk can't be reached, layouts are left exactly as they are.
 ## Setup
 
 1. **Create a local WAVE user** for this service, not a cloud user and not an admin. It needs rights to edit the shared layouts and create bookmarks, nothing more.
-2. **Export the WAVE server's certificate** to `wave-ca.pem`. TLS verification is always on, and there's no option to turn it off.
+2. **Export the WAVE server's certificate** to `wave-ca.pem` (command in `.env.example`) and set `WAVE_CA_CERT`. WAVE's self-signed certificate is issued to the server ID, not its IP, so also set `WAVE_TLS_SERVERNAME` to that ID. TLS verification is always on, and there's no option to turn it off.
 3. Copy the examples and fill them in. Both copies are gitignored:
    ```sh
    cp .env.example .env

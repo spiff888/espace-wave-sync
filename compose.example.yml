@@ -7,6 +7,6 @@ services:
     environment:
       CONFIG_PATH: /data/config.json
       STATE_PATH: /data/state.json
-      NODE_EXTRA_CA_CERTS: /data/wave-ca.pem
+      WAVE_CA_CERT: /data/wave-ca.pem
     volumes:
       - ./data:/data   # holds config.json, wave-ca.pem, state.json

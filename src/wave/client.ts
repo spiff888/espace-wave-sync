@@ -7,6 +7,9 @@
  * (https://<server>:7001/#/api-tool) and re-check after each WAVE upgrade.
  */
 
+import { readFileSync } from "node:fs";
+import { Agent, fetch } from "undici";
+import type { Env } from "../config.js";
 import type { LayoutItem, Rect } from "../plan.js";
 
 export interface WaveDevice {
@@ -43,15 +46,40 @@ export interface WaveClientOptions {
   baseUrl: string;
   username: string;
   password: string;
+  /** PEM text of certificate(s) to trust, in addition to the system store. */
+  ca?: string;
+  /** Certificate name to verify against when baseUrl is an IP. */
+  tlsServername?: string;
   timeoutMs?: number;
+}
+
+/** TLS is always verified. These only change *what* it is verified against. */
+export function waveClientFromEnv(env: Env): WaveClient {
+  return new WaveClient({
+    baseUrl: env.WAVE_URL,
+    username: env.WAVE_USERNAME,
+    password: env.WAVE_PASSWORD,
+    ca: env.WAVE_CA_CERT ? readFileSync(env.WAVE_CA_CERT, "utf8") : undefined,
+    tlsServername: env.WAVE_TLS_SERVERNAME,
+  });
 }
 
 export class WaveClient {
   private token: string | undefined;
   private readonly timeoutMs: number;
+  private readonly dispatcher: Agent | undefined;
 
   constructor(private readonly opts: WaveClientOptions) {
     this.timeoutMs = opts.timeoutMs ?? 15_000;
+    if (opts.ca || opts.tlsServername) {
+      this.dispatcher = new Agent({
+        connect: {
+          ...(opts.ca ? { ca: opts.ca } : {}),
+          ...(opts.tlsServername ? { servername: opts.tlsServername } : {}),
+          rejectUnauthorized: true,
+        },
+      });
+    }
   }
 
   // --- auth ---------------------------------------------------------------
@@ -157,6 +185,7 @@ export class WaveClient {
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(this.timeoutMs),
+      dispatcher: this.dispatcher,
     });
     const text = await res.text();
     if (!res.ok) {

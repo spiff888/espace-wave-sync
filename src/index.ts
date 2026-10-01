@@ -1,16 +1,17 @@
-import { loadConfig, loadEnv } from "./config.js";
+import { loadConfig, loadDotEnv, loadEnv } from "./config.js";
 import { fetchTodaysEvents } from "./kiosk.js";
 import { loadState, pruneState, saveState } from "./state.js";
 import { syncCampus } from "./sync.js";
-import { WaveClient } from "./wave/client.js";
+import { waveClientFromEnv } from "./wave/client.js";
 
 const log = (msg: string) => console.log(`${new Date().toISOString()} ${msg}`);
 
 async function main(): Promise<void> {
   const once = process.argv.includes("--once");
+  loadDotEnv();
   const env = loadEnv();
   const config = loadConfig(env.CONFIG_PATH);
-  const wave = new WaveClient({ baseUrl: env.WAVE_URL, username: env.WAVE_USERNAME, password: env.WAVE_PASSWORD });
+  const wave = waveClientFromEnv(env);
 
   log(`espace-wave-sync starting: ${config.campuses.length} campus(es), every ${env.SYNC_INTERVAL_SECONDS}s` +
     (env.DRY_RUN ? ", DRY RUN (no changes will be made)" : ""));

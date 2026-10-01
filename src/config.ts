@@ -1,5 +1,16 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
+
+/**
+ * Loads ./.env (or $ENV_FILE) into process.env if present. Variables already
+ * set in the environment win, so Docker's env_file and shell exports still work.
+ */
+export function loadDotEnv(path = process.env.ENV_FILE ?? ".env"): void {
+  if (!existsSync(path)) return;
+  const before = { ...process.env };
+  process.loadEnvFile(path);
+  Object.assign(process.env, before);
+}
 
 const CampusSchema = z.object({
   name: z.string().min(1),
@@ -33,6 +44,10 @@ const EnvSchema = z.object({
   WAVE_URL: z.string().url(),
   WAVE_USERNAME: z.string().min(1),
   WAVE_PASSWORD: z.string().min(1),
+  /** PEM file with the WAVE server certificate(s) to trust. */
+  WAVE_CA_CERT: z.string().min(1).optional(),
+  /** Name the certificate was issued to (WAVE's self-signed certs use the server ID). Lets WAVE_URL be an IP. */
+  WAVE_TLS_SERVERNAME: z.string().min(1).optional(),
   KIOSK_URL: z.string().url(),
   SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(15).default(60),
   DRY_RUN: z
