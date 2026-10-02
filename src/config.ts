@@ -19,7 +19,7 @@ const CampusSchema = z.object({
   layoutName: z.string().min(1),
   /** WAVE web page resource id for the campus board (the kiosk URL registered in WAVE). */
   boardWebPageId: z.string().min(1).optional(),
-  maxCameraTiles: z.number().int().min(1).max(15).default(8),
+  maxCameraTiles: z.number().int().min(1).max(36).default(8),
   gridColumns: z.number().int().min(1).max(6).default(3),
   defaultCameras: z.array(z.string().min(1)).default([]),
   /** eSPACE room name -> WAVE camera (device) ids. Names must match eSPACE exactly (the kiosk feed sends them unstripped). */
