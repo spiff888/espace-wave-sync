@@ -21,10 +21,25 @@ export function isInProgress(event: KioskEvent, now: Date): boolean {
   return t >= Date.parse(event.start) && t < Date.parse(event.end);
 }
 
+/**
+ * All-day bookings usually mean "room held for the day", not "people are in it now",
+ * so they don't pull up cameras or create bookmarks.
+ */
+export function counts(event: KioskEvent): boolean {
+  return event.allDay !== true;
+}
+
+/** Cameras mapped to any of an event's rooms, in room order, deduped. */
+export function camerasFor(campus: CampusConfig, event: KioskEvent): string[] {
+  const out: string[] = [];
+  for (const room of event.rooms) for (const cam of campus.rooms[room] ?? []) if (!out.includes(cam)) out.push(cam);
+  return out;
+}
+
 export interface Selection {
   /** Camera ids in priority order, already capped. */
   cameras: string[];
-  /** Live events at this campus, for logging. */
+  /** Live events at this campus that have at least one mapped room, for logging. */
   liveEvents: KioskEvent[];
   /** Cameras that wanted a tile but didn't fit under the cap. */
   dropped: string[];
@@ -33,18 +48,17 @@ export interface Selection {
 /**
  * Picks the cameras a campus layout should show right now.
  * Priority: cameras for live events (earliest start first), then default cameras.
- * Events in rooms not mapped to this campus are ignored.
  */
 export function selectCameras(campus: CampusConfig, events: KioskEvent[], opts: SelectionOptions): Selection {
   const liveEvents = events
-    .filter((e) => campus.rooms[e.room] !== undefined && isLive(e, opts))
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.room.localeCompare(b.room));
+    .filter((e) => counts(e) && camerasFor(campus, e).length > 0 && isLive(e, opts))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.title.localeCompare(b.title));
 
   const wanted: string[] = [];
   const add = (id: string) => {
     if (!wanted.includes(id)) wanted.push(id);
   };
-  for (const e of liveEvents) for (const cam of campus.rooms[e.room] ?? []) add(cam);
+  for (const e of liveEvents) for (const cam of camerasFor(campus, e)) add(cam);
   for (const cam of campus.defaultCameras) add(cam);
 
   return {
@@ -52,4 +66,11 @@ export function selectCameras(campus: CampusConfig, events: KioskEvent[], opts: 
     dropped: wanted.slice(campus.maxCameraTiles),
     liveEvents,
   };
+}
+
+/** Rooms with events today that aren't in config.json, sorted. Your to-do list for mapping. */
+export function unmappedRooms(campus: CampusConfig, events: KioskEvent[]): string[] {
+  const rooms = new Set<string>();
+  for (const e of events) if (counts(e)) for (const r of e.rooms) if (!(r in campus.rooms)) rooms.add(r);
+  return [...rooms].sort((a, b) => a.localeCompare(b));
 }

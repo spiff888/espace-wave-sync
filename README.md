@@ -30,9 +30,10 @@ If the kiosk can't be reached, layouts are left exactly as they are.
    cp config.example.json config.json
    npm install          # also enables the pre-commit hook
    ```
-4. List your cameras to fill in `config.json`:
+4. List your cameras and WAVE web pages to fill in `config.json`:
    ```sh
    npm run list-devices
+   npm run check-config      # validates config.json
    ```
    Room names in `config.json` must match eSPACE room names exactly.
 5. Do a dry run, which changes nothing:
@@ -43,14 +44,17 @@ If the kiosk can't be reached, layouts are left exactly as they are.
 
 ## Requirements on the kiosk
 
-`GET {KIOSK_URL}/api/v1/events?date=today` must return an array of events (or `{ "events": [...] }`), each with:
+Needs an `espace-events-kiosk` version with the integration feed, `GET {KIOSK_URL}/api/v1/events/<campus>` (documented in the kiosk README). Set each campus's `kioskCampus` to its key in the kiosk's config (the `main` in `/board/main`).
 
-| field | example |
-|---|---|
-| `id` | `"48213"` |
-| `title` | `"Sunday Service"` |
-| `room` | `"Main Auditorium"` |
-| `start` / `end` | `"2026-10-04T10:00:00-07:00"` |
+The feed sends eSPACE's original room names, before the kiosk's `stripRooms` display tweaks, so the keys under `rooms` in `config.json` must match eSPACE exactly, e.g. `Meeting Room A, Room 101`. All-day bookings are ignored.
+
+Check your mapping against today's real events:
+
+```sh
+npm run check-config -- --live
+```
+
+It lists rooms that have events today but aren't mapped yet. The running service logs the same list whenever it changes.
 
 ## Keeping site data out of git
 

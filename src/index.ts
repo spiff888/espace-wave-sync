@@ -33,18 +33,19 @@ async function main(): Promise<void> {
 
   async function cycle(): Promise<void> {
     const now = new Date();
-    let events;
-    try {
-      events = await fetchTodaysEvents(env.KIOSK_URL);
-    } catch (err) {
-      // Kiosk down: leave layouts exactly as they are rather than clearing them.
-      log(`kiosk unreachable, leaving layouts unchanged: ${(err as Error).message}`);
-      return;
-    }
     const state = pruneState(loadState(env.STATE_PATH), now);
     for (const campus of config.campuses) {
+      let feed;
       try {
-        await syncCampus({ wave, config, events, state, now, dryRun: env.DRY_RUN, log }, campus);
+        feed = await fetchTodaysEvents(env.KIOSK_URL, campus.kioskCampus);
+      } catch (err) {
+        // Kiosk down: leave this campus's layout exactly as it is rather than clearing it.
+        log(`[${campus.name}] kiosk unreachable, leaving layout unchanged: ${(err as Error).message}`);
+        continue;
+      }
+      if (feed.stale) log(`[${campus.name}] note: kiosk reports its eSPACE data is stale; using what it has`);
+      try {
+        await syncCampus({ wave, config, events: feed.events, state, now, dryRun: env.DRY_RUN, log }, campus);
       } catch (err) {
         log(`[${campus.name}] sync failed: ${(err as Error).message}`);
       }

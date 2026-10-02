@@ -3,11 +3,14 @@
   "graceMinutes": 5,
   "bookmarks": {
     "enabled": true,
-    "tags": ["espace"]
+    "tags": [
+      "espace"
+    ]
   },
   "campuses": [
     {
       "name": "Example Campus",
+      "kioskCampus": "main",
       "layoutName": "Daily View - Example Campus",
       "boardWebPageId": "00000000-0000-0000-0000-00000000b0a2",
       "maxCameraTiles": 8,

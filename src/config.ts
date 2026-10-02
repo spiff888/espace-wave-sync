@@ -14,13 +14,15 @@ export function loadDotEnv(path = process.env.ENV_FILE ?? ".env"): void {
 
 const CampusSchema = z.object({
   name: z.string().min(1),
+  /** The campus key in the kiosk's config.json, i.e. the <campus> in /board/<campus>. */
+  kioskCampus: z.string().regex(/^[\w-]+$/, "use the kiosk's campus key, e.g. the 'main' in /board/main"),
   layoutName: z.string().min(1),
   /** WAVE web page resource id for the campus board (the kiosk URL registered in WAVE). */
   boardWebPageId: z.string().min(1).optional(),
   maxCameraTiles: z.number().int().min(1).max(15).default(8),
   gridColumns: z.number().int().min(1).max(6).default(3),
   defaultCameras: z.array(z.string().min(1)).default([]),
-  /** eSPACE room name -> WAVE camera (device) ids. Room names must match the kiosk API exactly. */
+  /** eSPACE room name -> WAVE camera (device) ids. Names must match eSPACE exactly (the kiosk feed sends them unstripped). */
   rooms: z.record(z.string(), z.array(z.string().min(1))),
 });
 

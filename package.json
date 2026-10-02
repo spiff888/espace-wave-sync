@@ -15,7 +15,8 @@
     "list-devices": "tsx src/tools/list-devices.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "check-config": "tsx src/tools/check-config.ts"
   },
   "dependencies": {
     "undici": "^8.11.2",

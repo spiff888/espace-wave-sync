@@ -109,6 +109,12 @@ export class WaveClient {
     return rows.map((d) => ({ id: String(d.id), name: String(d.name ?? "") }));
   }
 
+  /** Web pages registered in WAVE (e.g. the campus board). VERIFY: field names on 6.0.5. */
+  async listWebPages(): Promise<Array<WaveDevice & { url: string }>> {
+    const rows = await this.request<Array<Record<string, unknown>>>("GET", "/rest/v3/webPages");
+    return rows.map((p) => ({ id: String(p.id), name: String(p.name ?? ""), url: String(p.url ?? "") }));
+  }
+
   async listLayouts(): Promise<WaveLayout[]> {
     const rows = await this.request<Array<Record<string, unknown>>>("GET", "/rest/v3/layouts");
     return rows.map((l) => ({
@@ -124,14 +130,19 @@ export class WaveClient {
 
   /** Shared layout (empty parentId). Required fields per API docs: name, items, fixedWidth, fixedHeight. */
   async createSharedLayout(name: string, columns: number, rows: number): Promise<WaveLayout> {
-    const created = await this.request<Record<string, unknown>>("POST", "/rest/v3/layouts", {
+    const created = await this.request<Record<string, unknown> | undefined>("POST", "/rest/v3/layouts", {
       name,
       parentId: "",
       items: [],
       fixedWidth: columns,
       fixedHeight: rows,
     });
-    return { id: String(created.id), name, items: [] };
+    // VERIFY: whether the reply includes the new id. If not, look it up by name.
+    const id = created && typeof created === "object" && !Array.isArray(created) && created.id ? String(created.id) : undefined;
+    if (id) return { id, name, items: [] };
+    const found = await this.findLayoutByName(name);
+    if (!found) throw new Error(`created layout "${name}" but couldn't find it afterwards`);
+    return { ...found, items: found.items ?? [] };
   }
 
   async getLayoutItems(layoutId: string): Promise<LayoutItem[]> {

@@ -27,13 +27,20 @@ describe("loadEnv", () => {
 
 describe("parseConfig", () => {
   it("accepts the example config shape", () => {
-    const c = parseConfig({ campuses: [{ name: "X", layoutName: "L", rooms: { A: ["cam"] } }] });
+    const c = parseConfig({ campuses: [{ name: "X", kioskCampus: "x", layoutName: "L", rooms: { A: ["cam"] } }] });
     expect(c.lookaheadMinutes).toBe(15);
     expect(c.campuses[0]?.maxCameraTiles).toBe(8);
   });
 
   it("enables bookmarks by default when the section is omitted", () => {
-    const c = parseConfig({ campuses: [{ name: "X", layoutName: "L", rooms: {} }] });
+    const c = parseConfig({ campuses: [{ name: "X", kioskCampus: "x", layoutName: "L", rooms: {} }] });
     expect(c.bookmarks).toEqual({ enabled: true, tags: ["espace"] });
+  });
+});
+
+describe("kioskCampus", () => {
+  it("is required and must look like a kiosk campus key", () => {
+    expect(() => parseConfig({ campuses: [{ name: "X", layoutName: "L", rooms: {} }] })).toThrow(/kioskCampus/);
+    expect(() => parseConfig({ campuses: [{ name: "X", kioskCampus: "/board/main", layoutName: "L", rooms: {} }] })).toThrow();
   });
 });
