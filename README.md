@@ -14,15 +14,17 @@ espace-events-kiosk  --GET /api/v1/events-->  espace-wave-sync  --REST v3-->  WA
 Every cycle (default: 60 s), for each campus:
 
 1. An event is **live** from 15 min before its start until 5 min after its end (`lookaheadMinutes`, `graceMinutes`).
-2. Cameras for live events come first, earliest event first, then the campus's `defaultCameras`. The list is capped at `maxCameraTiles` (default 8).
+2. Cameras for live events come first, then the campus's `defaultCameras`, capped at `maxCameraTiles` (default 8). When overlapping events want more tiles than fit, they **take turns**: every event's 1st camera, then every event's 2nd, and so on (events by start time, cameras in `config.json` order, so list each room's best camera first).
 3. The board takes tile 0. Cameras that stay on screen **keep their tile**, so the TVs don't reshuffle; new cameras fill the gaps.
 4. When an event starts, it's bookmarked once on each of its room's cameras.
 
-If the kiosk can't be reached, layouts are left exactly as they are.
+If the kiosk can't be reached, layouts are left exactly as they are. Each camera's bookmark is created independently, so one failure doesn't block the rest, and an error that repeats every cycle is logged once (plus a line when it clears).
 
 ## Setup
 
-1. **Create a local WAVE user** for this service, not a cloud user and not an admin. It needs rights to edit the shared layouts and create bookmarks, nothing more.
+1. **Create a local WAVE user** for this service (not a cloud user), and have an admin create the shared layout(s) named in `config.json`, since non-admins can't create shared layouts.
+   - On WAVE 6.0.5, a Viewer with every right on that one layout still gets `403 not permitted to modify` when adding or removing tiles, and can't bookmark cameras that aren't on the layout. **Power User** works. If you find a narrower role that does, please open an issue.
+   - Whatever role you use: keep the user local-only, give it a long unique password, and `chmod 600 .env`.
 2. **Export the WAVE server's certificate** to `wave-ca.pem` (command in `.env.example`) and set `WAVE_CA_CERT`. WAVE's self-signed certificate is issued to the server ID, not its IP, so also set `WAVE_TLS_SERVERNAME` to that ID. TLS verification is always on, and there's no option to turn it off.
 3. Copy the examples and fill them in. Both copies are gitignored:
    ```sh

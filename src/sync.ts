@@ -20,6 +20,22 @@ const lastUnmapped = new Map<string, string>();
 /** Bookmarks already reported in dry run, so each is logged once rather than every cycle. */
 const dryRunBookmarks = new Set<string>();
 
+/**
+ * Last error logged per key. A failure that repeats every cycle is logged once,
+ * then again only if the message changes, plus a line when it clears.
+ */
+const lastErrors = new Map<string, string>();
+
+export function reportError(log: (msg: string) => void, key: string, msg: string): void {
+  if (lastErrors.get(key) === msg) return;
+  lastErrors.set(key, msg);
+  log(`${msg} (repeats are not logged until this changes)`);
+}
+
+export function clearError(log: (msg: string) => void, key: string, msg: string): void {
+  if (lastErrors.delete(key)) log(msg);
+}
+
 export async function syncCampus(ctx: CycleContext, campus: CampusConfig): Promise<void> {
   const { wave, config, events, now, dryRun, log } = ctx;
   const tag = `[${campus.name}]`;
@@ -46,16 +62,18 @@ export async function syncCampus(ctx: CycleContext, campus: CampusConfig): Promi
   );
 
   // Layout and bookmarks are independent: a failure in one shouldn't skip the other.
+  const layoutKey = `${campus.name}:layout`;
   try {
     await syncLayout(ctx, campus, selection.cameras);
+    clearError(log, layoutKey, `${tag} layout updates working again`);
   } catch (err) {
-    log(`${tag} layout update failed: ${(err as Error).message}`);
+    reportError(log, layoutKey, `${tag} layout update failed: ${(err as Error).message}`);
   }
   if (config.bookmarks.enabled) {
     try {
       await createBookmarks(ctx, campus);
     } catch (err) {
-      log(`${tag} bookmarks failed: ${(err as Error).message}`);
+      reportError(log, `${campus.name}:bookmarks`, `${tag} bookmarks failed: ${(err as Error).message}`);
     }
   }
 }
@@ -119,13 +137,21 @@ async function createBookmarks(ctx: CycleContext, campus: CampusConfig): Promise
         dryRunBookmarks.add(key);
         continue;
       }
-      await ctx.wave.createBookmark(deviceId, {
-        name: event.title,
-        description: `eSPACE: ${event.rooms.join(", ")}`,
-        startTimeMs,
-        durationMs,
-        tags: ctx.config.bookmarks.tags,
-      });
+      // Each camera on its own: one failure (e.g. no access to that camera) doesn't block the rest.
+      const errKey = `${campus.name}:bookmark:${deviceId}`;
+      try {
+        await ctx.wave.createBookmark(deviceId, {
+          name: event.title,
+          description: `eSPACE: ${event.rooms.join(", ")}`,
+          startTimeMs,
+          durationMs,
+          tags: ctx.config.bookmarks.tags,
+        });
+      } catch (err) {
+        reportError(ctx.log, errKey, `${tag} bookmark failed on ${deviceId}: ${(err as Error).message}`);
+        continue;
+      }
+      clearError(ctx.log, errKey, `${tag} bookmarks on ${deviceId} working again`);
       ctx.state.bookmarks[key] = event.end;
       ctx.log(`${tag} bookmarked "${event.title}" on ${deviceId}`);
     }

@@ -47,7 +47,11 @@ export interface Selection {
 
 /**
  * Picks the cameras a campus layout should show right now.
- * Priority: cameras for live events (earliest start first), then default cameras.
+ *
+ * Live events take turns: every event's 1st camera, then every event's 2nd, and so on
+ * (events ordered by start time, cameras in config.json order). So when several events
+ * overlap, each gets a fair share of the tiles instead of the earliest one taking them all.
+ * Default cameras fill whatever is left.
  */
 export function selectCameras(campus: CampusConfig, events: KioskEvent[], opts: SelectionOptions): Selection {
   const liveEvents = events
@@ -58,7 +62,9 @@ export function selectCameras(campus: CampusConfig, events: KioskEvent[], opts: 
   const add = (id: string) => {
     if (!wanted.includes(id)) wanted.push(id);
   };
-  for (const e of liveEvents) for (const cam of camerasFor(campus, e)) add(cam);
+  const perEvent = liveEvents.map((e) => camerasFor(campus, e));
+  const rounds = Math.max(0, ...perEvent.map((cams) => cams.length));
+  for (let i = 0; i < rounds; i++) for (const cams of perEvent) if (i < cams.length) add(cams[i]!);
   for (const cam of campus.defaultCameras) add(cam);
 
   return {

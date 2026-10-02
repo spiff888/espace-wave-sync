@@ -49,14 +49,36 @@ describe("selectCameras", () => {
     expect(s.liveEvents).toHaveLength(0);
   });
 
-  it("puts live-event cameras ahead of defaults, earliest event first", () => {
+  it("puts live-event cameras ahead of defaults, taking turns from the earliest event", () => {
     const s = selectCameras(
       campus,
       [ev("2", "Chapel", "10:10", "11:00"), ev("1", "Auditorium", "09:30", "11:00")],
       at("10:00"),
     );
-    expect(s.cameras).toEqual(["aud-1", "aud-2", "chapel-1"]);
+    expect(s.cameras).toEqual(["aud-1", "chapel-1", "aud-2"]);
     expect(s.dropped).toEqual(["lobby"]);
+  });
+
+  it("shares tiles fairly when overlapping events want more than fit", () => {
+    const big: CampusConfig = {
+      ...campus,
+      maxCameraTiles: 9,
+      defaultCameras: ["d1"],
+      rooms: { A: ["a1", "a2", "a3"], B: ["b1", "b2", "b3", "b4", "b5"], C: ["c1", "c2", "c3", "c4", "c5"] },
+    };
+    const s = selectCameras(
+      big,
+      [ev("c", "C", "10:00", "11:00"), ev("a", "A", "09:00", "11:00"), ev("b", "B", "09:30", "11:00")],
+      at("10:00"),
+    );
+    // 3 rounds of (A, B, C) = 3 each
+    expect(s.cameras).toEqual(["a1", "b1", "c1", "a2", "b2", "c2", "a3", "b3", "c3"]);
+    expect(s.dropped).toEqual(["b4", "c4", "b5", "c5", "d1"]);
+  });
+
+  it("gives a single event all its cameras before defaults", () => {
+    const s = selectCameras({ ...campus, maxCameraTiles: 9 }, [ev("1", "Auditorium", "10:00", "11:00")], at("10:00"));
+    expect(s.cameras).toEqual(["aud-1", "aud-2", "lobby"]);
   });
 
   it("dedupes a camera shared by a room and the defaults", () => {
