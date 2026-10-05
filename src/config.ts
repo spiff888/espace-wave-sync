@@ -36,6 +36,13 @@ const ConfigSchema = z.object({
     })
     // Zod 4: prefault parses {} through the schema so the inner defaults apply.
     .prefault({}),
+  /** All-day bookings: shown after timed events (before defaults); not bookmarked unless asked. */
+  allDayEvents: z
+    .object({
+      show: z.boolean().default(true),
+      bookmark: z.boolean().default(false),
+    })
+    .prefault({}),
   campuses: z.array(CampusSchema).min(1),
 });
 

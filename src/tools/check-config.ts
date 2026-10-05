@@ -39,7 +39,7 @@ if (process.argv.includes("--live")) {
   for (const c of config.campuses) {
     try {
       const feed = await fetchTodaysEvents(kioskUrl, c.kioskCampus);
-      const missing = unmappedRooms(c, feed.events);
+      const missing = unmappedRooms(c, feed.events, config.allDayEvents.show);
       console.log(`\n${c.name}: ${feed.events.length} event(s) today${feed.stale ? " (kiosk data is stale)" : ""}`);
       console.log(missing.length ? `  rooms with events today but not mapped:\n${missing.map((r) => `    - ${r}`).join("\n")}` : "  every room with an event today is mapped");
     } catch (err) {

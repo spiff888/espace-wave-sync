@@ -44,3 +44,17 @@ describe("kioskCampus", () => {
     expect(() => parseConfig({ campuses: [{ name: "X", kioskCampus: "/board/main", layoutName: "L", rooms: {} }] })).toThrow();
   });
 });
+
+describe("maxCameraTiles", () => {
+  it("allows a full 4x4 grid without a board tile", () => {
+    const c = parseConfig({ campuses: [{ name: "X", kioskCampus: "x", layoutName: "L", maxCameraTiles: 16, gridColumns: 4, rooms: {} }] });
+    expect(c.campuses[0]?.maxCameraTiles).toBe(16);
+  });
+});
+
+describe("allDayEvents", () => {
+  it("defaults to shown but not bookmarked", () => {
+    const c = parseConfig({ campuses: [{ name: "X", kioskCampus: "x", layoutName: "L", rooms: {} }] });
+    expect(c.allDayEvents).toEqual({ show: true, bookmark: false });
+  });
+});

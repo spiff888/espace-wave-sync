@@ -14,9 +14,9 @@ espace-events-kiosk  --GET /api/v1/events-->  espace-wave-sync  --REST v3-->  WA
 Every cycle (default: 60 s), for each campus:
 
 1. An event is **live** from 15 min before its start until 5 min after its end (`lookaheadMinutes`, `graceMinutes`).
-2. Cameras for live events come first, then the campus's `defaultCameras`, capped at `maxCameraTiles` (default 8). When overlapping events want more tiles than fit, they **take turns**: every event's 1st camera, then every event's 2nd, and so on (events by start time, cameras in `config.json` order, so list each room's best camera first).
+2. Priority: timed events, then all-day events, then the campus's `defaultCameras`, capped at `maxCameraTiles` (default 8). When events want more tiles than fit, they **take turns**: every event's 1st camera, then every event's 2nd, and so on (events by start time, cameras in `config.json` order, so list each room's best camera first).
 3. The board takes tile 0. Cameras that stay on screen **keep their tile**, so the TVs don't reshuffle; new cameras fill the gaps.
-4. When an event starts, it's bookmarked once on each of its room's cameras.
+4. When an event starts, it's bookmarked once on each of its room's cameras. All-day events aren't bookmarked unless `allDayEvents.bookmark` is `true`; set `allDayEvents.show` to `false` to ignore them entirely.
 
 If the kiosk can't be reached, layouts are left exactly as they are. Each camera's bookmark is created independently, so one failure doesn't block the rest, and an error that repeats every cycle is logged once (plus a line when it clears).
 
@@ -48,7 +48,7 @@ If the kiosk can't be reached, layouts are left exactly as they are. Each camera
 
 Needs an `espace-events-kiosk` version with the integration feed, `GET {KIOSK_URL}/api/v1/events/<campus>` (documented in the kiosk README). Set each campus's `kioskCampus` to its key in the kiosk's config (the `main` in `/board/main`).
 
-The feed sends eSPACE's original room names, before the kiosk's `stripRooms` display tweaks, so the keys under `rooms` in `config.json` must match eSPACE exactly, e.g. `Meeting Room A, Room 101`. All-day bookings are ignored.
+The feed sends eSPACE's original room names, before the kiosk's `stripRooms` display tweaks, so the keys under `rooms` in `config.json` must match eSPACE exactly, e.g. `Meeting Room A, Room 101`.
 
 Check your mapping against today's real events:
 

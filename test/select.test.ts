@@ -97,9 +97,45 @@ describe("selectCameras", () => {
     expect(s.liveEvents).toHaveLength(1);
   });
 
-  it("skips all-day bookings", () => {
-    const s = selectCameras(campus, [ev("1", "Auditorium", "00:00", "23:59", { allDay: true })], at("10:00"));
+  it("shows all-day bookings after timed events, before defaults", () => {
+    const big: CampusConfig = { ...campus, maxCameraTiles: 9 };
+    const s = selectCameras(
+      big,
+      [ev("ad", "Auditorium", "00:00", "23:59", { allDay: true }), ev("t", "Chapel", "09:30", "11:00")],
+      at("10:00"),
+    );
+    expect(s.cameras).toEqual(["chapel-1", "aud-1", "aud-2", "lobby"]);
+    expect(s.liveEvents.map((e) => e.id)).toEqual(["t", "ad"]);
+  });
+
+  it("can ignore all-day bookings", () => {
+    const s = selectCameras(
+      campus,
+      [ev("1", "Auditorium", "00:00", "23:59", { allDay: true })],
+      { ...at("10:00"), includeAllDay: false },
+    );
     expect(s.cameras).toEqual(["lobby"]);
+  });
+
+  it("handles a real mixed day: one timed event plus two all-day jobs", () => {
+    const day: CampusConfig = {
+      ...campus,
+      maxCameraTiles: 6,
+      defaultCameras: ["d1", "d2", "d3"],
+      rooms: { MeetingA: ["m1", "m2"], StudentCenter: ["s1", "s2"], Auditorium: ["a1", "a2"] },
+    };
+    const s = selectCameras(
+      day,
+      [
+        ev("maze", "StudentCenter", "00:00", "23:59", { allDay: true }),
+        ev("baptistry", "Auditorium", "00:00", "23:59", { allDay: true }),
+        ev("hh", ["MeetingA"], "07:00", "14:30"),
+      ],
+      at("10:28"),
+    );
+    // timed first (m1, m2), then all-day take turns (a1 before s1: same start, sorted by title)
+    expect(s.cameras).toEqual(["m1", "m2", "a1", "s1", "a2", "s2"]);
+    expect(s.dropped).toEqual(["d1", "d2", "d3"]);
   });
 });
 
@@ -110,13 +146,14 @@ describe("camerasFor", () => {
 });
 
 describe("unmappedRooms", () => {
-  it("lists rooms with events that aren't in the map, once each, sorted", () => {
+  it("lists rooms with events that aren't in the map, once each, sorted (all-day optional)", () => {
     const events = [
       ev("1", ["Auditorium", "Room B"], "09:00", "10:00"),
       ev("2", "Room A", "11:00", "12:00"),
       ev("3", "Room B", "13:00", "14:00"),
       ev("4", "Room Z", "00:00", "23:59", { allDay: true }),
     ];
-    expect(unmappedRooms(campus, events)).toEqual(["Room A", "Room B"]);
+    expect(unmappedRooms(campus, events)).toEqual(["Room A", "Room B", "Room Z"]);
+    expect(unmappedRooms(campus, events, false)).toEqual(["Room A", "Room B"]);
   });
 });

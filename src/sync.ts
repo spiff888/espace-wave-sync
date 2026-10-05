@@ -1,7 +1,7 @@
 import type { CampusConfig, SyncConfig } from "./config.js";
 import type { KioskEvent } from "./kiosk.js";
 import { planLayout, type Op } from "./plan.js";
-import { camerasFor, counts, isInProgress, selectCameras, unmappedRooms } from "./select.js";
+import { camerasFor, isInProgress, selectCameras, unmappedRooms } from "./select.js";
 import { bookmarkKey, type State } from "./state.js";
 import type { WaveClient } from "./wave/client.js";
 
@@ -40,7 +40,7 @@ export async function syncCampus(ctx: CycleContext, campus: CampusConfig): Promi
   const { wave, config, events, now, dryRun, log } = ctx;
   const tag = `[${campus.name}]`;
 
-  const unmapped = unmappedRooms(campus, events);
+  const unmapped = unmappedRooms(campus, events, config.allDayEvents.show);
   const unmappedKey = unmapped.join("\n");
   if (unmappedKey !== lastUnmapped.get(campus.name)) {
     lastUnmapped.set(campus.name, unmappedKey);
@@ -54,6 +54,7 @@ export async function syncCampus(ctx: CycleContext, campus: CampusConfig): Promi
     now,
     lookaheadMinutes: config.lookaheadMinutes,
     graceMinutes: config.graceMinutes,
+    includeAllDay: config.allDayEvents.show,
   });
   log(
     `${tag} live events: ${selection.liveEvents.map((e) => `"${e.title}" (${e.rooms.join(", ")})`).join("; ") || "none"}; ` +
@@ -126,7 +127,9 @@ async function applyOps(ctx: CycleContext, campus: CampusConfig, layoutId: strin
 async function createBookmarks(ctx: CycleContext, campus: CampusConfig): Promise<void> {
   const tag = `[${campus.name}]`;
   for (const event of ctx.events) {
-    if (!counts(event) || !isInProgress(event, ctx.now)) continue;
+    // All-day bookings only get bookmarks if asked for: a 24-hour bookmark doesn't help find footage.
+    const allowed = event.allDay ? ctx.config.allDayEvents.show && ctx.config.allDayEvents.bookmark : true;
+    if (!allowed || !isInProgress(event, ctx.now)) continue;
     for (const deviceId of camerasFor(campus, event)) {
       const key = bookmarkKey(event.id, deviceId);
       if (ctx.state.bookmarks[key]) continue;
