@@ -7,15 +7,15 @@ espace-events-kiosk  --GET /api/v1/events-->  espace-wave-sync  --REST v3-->  WA
      (board page)                               (this repo)                  (layout, bookmarks)
 ```
 
-> **Status:** early. Built against WAVE 6.0.x, REST API v3. Anything not yet confirmed on a live server is marked `VERIFY` in `src/wave/client.ts`.
+> **Status:** early, but running in production at one site on WAVE 6.0.5 (REST API v3). Anything not yet confirmed on a live server is marked `VERIFY` in `src/wave/client.ts`.
 
 ## How it decides what to show
 
-Every cycle (default: 60 s), for each campus:
+Every cycle (`SYNC_INTERVAL_SECONDS`, default 60), for each campus:
 
 1. An event is **live** from 15 min before its start until 5 min after its end (`lookaheadMinutes`, `graceMinutes`).
-2. Priority: timed events, then all-day events, then the campus's `defaultCameras`, capped at `maxCameraTiles` (default 8). When events want more tiles than fit, they **take turns**: every event's 1st camera, then every event's 2nd, and so on (events by start time, cameras in `config.json` order, so list each room's best camera first).
-3. The board takes tile 0. Cameras that stay on screen **keep their tile**, so the TVs don't reshuffle; new cameras fill the gaps.
+2. Priority: timed events, then all-day events, then the campus's `defaultCameras`, capped at `maxCameraTiles` (default 8, up to 36). When events want more tiles than fit, they **take turns**: every event's 1st camera, then every event's 2nd, and so on (events by start time, cameras in `config.json` order, so list each room's best camera first).
+3. If `boardWebPageId` is set, the board takes tile 0. Cameras that stay on screen **keep their tile**, so the TVs don't reshuffle; new cameras fill the gaps.
 4. When an event starts, it's bookmarked once on each of its room's cameras. All-day events aren't bookmarked unless `allDayEvents.bookmark` is `true`; set `allDayEvents.show` to `false` to ignore them entirely.
 
 If the kiosk can't be reached, layouts are left exactly as they are. Each camera's bookmark is created independently, so one failure doesn't block the rest, and an error that repeats every cycle is logged once (plus a line when it clears).
@@ -37,12 +37,12 @@ If the kiosk can't be reached, layouts are left exactly as they are. Each camera
    npm run list-devices
    npm run check-config      # validates config.json
    ```
-   Room names in `config.json` must match eSPACE room names exactly.
+   Room names in `config.json` must match eSPACE room names exactly. A room can share cameras with other rooms, and a room with no cameras can be mapped to `[]` so it stops showing up as unmapped.
 5. Do a dry run, which changes nothing:
    ```sh
    npm run once
    ```
-6. When the planned changes look right, set `DRY_RUN=false` in `.env`. Then run it with `npm run build && npm start`, or with Docker (`compose.example.yml`).
+6. When the planned changes look right, set `DRY_RUN=false` in `.env`. Then run it with `npm run build && npm start`, or with Docker (`compose.example.yml`). If the kiosk runs on the same machine as the container, set `KIOSK_URL=http://host.docker.internal:<port>`, because `localhost` inside the container is the container itself.
 
 ## Requirements on the kiosk
 

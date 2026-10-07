@@ -7,6 +7,10 @@
       "espace"
     ]
   },
+  "allDayEvents": {
+    "show": true,
+    "bookmark": false
+  },
   "campuses": [
     {
       "name": "Example Campus",
