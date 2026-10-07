@@ -78,3 +78,7 @@ gitleaks detect --config .gitleaks.toml --redact
 npm test          # selection and layout-diff logic, no WAVE needed
 npm run typecheck
 ```
+
+## License
+
+Licensed under the GNU General Public License v3.0 or later. See [LICENSE](LICENSE).
