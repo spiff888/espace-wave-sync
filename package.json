@@ -16,7 +16,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "prepare": "git config core.hooksPath .githooks || true",
-    "check-config": "tsx src/tools/check-config.ts"
+    "check-config": "tsx src/tools/check-config.ts",
+    "doc-cameras": "tsx src/tools/doc-cameras.ts"
   },
   "dependencies": {
     "undici": "^8.11.2",

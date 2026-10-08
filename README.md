@@ -58,6 +58,14 @@ npm run check-config -- --live
 
 It lists rooms that have events today but aren't mapped yet. The running service logs the same list whenever it changes.
 
+For your internal docs, print the mapping as a Markdown table with camera names instead of ids (add `-- --live` to include today's unmapped rooms):
+
+```sh
+npm run --silent doc-cameras > cameras.md
+```
+
+The output contains your real room and camera names, so keep it in private documentation, not in this repo.
+
 ## Keeping site data out of git
 
 This repo is meant to be shareable, so nothing specific to your site belongs in it:
