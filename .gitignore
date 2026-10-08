@@ -4,6 +4,7 @@
 !.env.example
 config.json
 state.json
+cameras*.md
 *.pem
 *.crt
 *.key
